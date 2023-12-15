@@ -83,6 +83,7 @@ def extract_shootings() -> bool:
     # Return a Boolean indicating success or failure
     return result
 
+
 @asset(deps = [arrests_json])
 def extract_arrests() -> bool:
     result = True
@@ -105,11 +106,43 @@ def extract_arrests() -> bool:
             
     return result
 
+
+
 @job
 def load_files_into_db_job():
     extract_shootings()
 
 
 
+from dagster import MaterializeResult, MetadataValue
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from io import BytesIO
+import base64
+
+@asset(deps=[extract_shootings])
+def shootings_per_month_hist() -> MaterializeResult:
+    client = MongoClient(mongo_connection_string)
+    shootings_db = client["nypd_analysis"]
+    shootings_collection = shootings_db["shootings"]
+    collection_name = "shootings"
+    collection=shootings_db[collection_name]
+    data = list(collection.find())
+    client.close()
+    df = pd.DataFrame(data)
+    df['month'] = pd.to_datetime(df['occur_date']).dt.month_name()
+    
+    plt.hist(data = df, x="month",color='skyblue')
+    buffer = BytesIO()
+    plt.savefig(buffer, format = "png")
+    image_data = base64.b64encode(buffer.getvalue())
+
+    md_content = f"![img](data:image/png;base64),{image_data.decode()}"
+
+
+    return MaterializeResult(
+        metadata={"Shootings Per Month Hist": MetadataValue.md(md_content)}
+    )
 
 
