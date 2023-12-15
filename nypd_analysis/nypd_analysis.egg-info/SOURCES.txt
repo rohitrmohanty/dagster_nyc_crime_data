@@ -1,0 +1,11 @@
+README.md
+pyproject.toml
+setup.cfg
+setup.py
+nypd_analysis/__init__.py
+nypd_analysis/assets.py
+nypd_analysis.egg-info/PKG-INFO
+nypd_analysis.egg-info/SOURCES.txt
+nypd_analysis.egg-info/dependency_links.txt
+nypd_analysis.egg-info/requires.txt
+nypd_analysis.egg-info/top_level.txt
