@@ -5,10 +5,12 @@ import os
 import requests
 from dagster import asset
 
+headers = { "X-App-Token": "WGwrytV3FHVDoouYC91Qp7X8c" }
+
 @asset
 def arrests_json() -> None:
-    nypd_arrests_url = "https://data.cityofnewyork.us/resource/uip8-fykc.json"
-    nypd_arrests = requests.get(nypd_arrests_url).json()
+    nypd_arrests_url = "https://data.cityofnewyork.us/resource/uip8-fykc.json?$limit=200000"
+    nypd_arrests = requests.get(nypd_arrests_url, headers = headers).json()
 
     os.makedirs("data", exist_ok = True)
     with open("data/arrests.json", "w") as f:
