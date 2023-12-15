@@ -1,6 +1,0 @@
-[32m2023-12-15 11:46:44 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - e20817ad-cb32-41e8-86fe-275f5580e231 - 46195 - LOGS_CAPTURED - Started capturing logs in process (pid: 46195).
-[32m2023-12-15 11:46:44 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - e20817ad-cb32-41e8-86fe-275f5580e231 - 46195 - arrests_json - STEP_START - Started execution of step "arrests_json".
-[32m2023-12-15 11:46:45 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - e20817ad-cb32-41e8-86fe-275f5580e231 - 46195 - arrests_json - STEP_OUTPUT - Yielded output "result" of type "Nothing". (Type check passed).
-[32m2023-12-15 11:46:46 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - e20817ad-cb32-41e8-86fe-275f5580e231 - 46195 - arrests_json - ASSET_MATERIALIZATION - Materialized value arrests_json.
-[32m2023-12-15 11:46:46 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - e20817ad-cb32-41e8-86fe-275f5580e231 - 46195 - arrests_json - HANDLED_OUTPUT - Handled output "result" using IO manager "io_manager"
-[32m2023-12-15 11:46:46 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - e20817ad-cb32-41e8-86fe-275f5580e231 - 46195 - arrests_json - STEP_SUCCESS - Finished execution of step "arrests_json" in 1.27s.
