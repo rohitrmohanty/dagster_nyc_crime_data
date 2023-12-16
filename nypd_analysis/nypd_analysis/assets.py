@@ -131,9 +131,10 @@ def shootings_per_month_hist() -> MaterializeResult:
     data = list(collection.find())
     client.close()
     df = pd.DataFrame(data)
-    df['month'] = pd.to_datetime(df['occur_date']).dt.month_name()
+    df['month'] = pd.to_datetime(df['occur_date']).dt.month
     
-    sns.histplot(data = df, x="month",color='skyblue')
+    sns.histplot(data = df, x="month",color='skyblue', discrete = True)
+    plt.xlabel('Month')
     buffer = BytesIO()
     plt.savefig(buffer, format = "png")
     image_data = base64.b64encode(buffer.getvalue())
