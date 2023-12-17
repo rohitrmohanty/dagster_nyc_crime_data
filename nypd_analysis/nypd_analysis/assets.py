@@ -18,20 +18,12 @@ def arrests_json() -> None:
 
 @asset
 def complaints_csv() -> None:
-    nypd_complaints_url = "https://data.cityofnewyork.us/resource/5uac-w243.csv"
-    nypd_complaints = requests.get(nypd_complaints_url).iter_content()
-    
+    nypd_complaints_url = "https://data.cityofnewyork.us/resource/5uac-w243.csv?$limit=40000000"
+    nypd_complaints = requests.get(nypd_complaints_url, headers = headers)
 
     os.makedirs("data", exist_ok = True)
-    with open('data/complaints.csv', 'wb') as csv_file:
-        csv_file.write(nypd_complaints)
-
-
-
-
-
-
-
+    with open('data/complaints.csv', 'w') as csv_file:
+        csv_file.write(nypd_complaints.text)
 
 @asset
 def shooting_json() -> None:
@@ -106,7 +98,21 @@ def extract_arrests() -> bool:
             
     return result
 
+from sqlalchemy import create_engine
 
+postgres_connection_string = "postgresql+psycopg2://dap:dap@127.0.0.1:5432/nypd"
+@asset(deps = [complaints_csv])
+def extract_complaints() -> bool:
+    result = True
+    complaints = pd.read_csv('data/complaints.csv') 
+    try:
+        engine = create_engine(postgres_connection_string)
+        complaints.to_sql('Complaints', engine, if_exists = 'replace')                
+    except Exception as err:
+        logger.error("Error: %s" % err)
+        result = False
+
+    return result
 
 @job
 def load_files_into_db_job():
