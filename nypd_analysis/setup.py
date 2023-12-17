@@ -5,7 +5,13 @@ setup(
     packages=find_packages(exclude=["nypd_analysis_tests"]),
     install_requires=[
         "dagster",
-        "dagster-cloud"
+        "dagster-cloud",
+        "pandas",
+        "matplotlib",
+        "seaborn",
+        "pymongo",
+        "psycopg2",
+        "SQLAlchemy"
     ],
     extras_require={"dev": ["dagster-webserver", "pytest"]},
 )
