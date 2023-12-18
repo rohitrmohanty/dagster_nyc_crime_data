@@ -107,7 +107,7 @@ def extract_complaints() -> bool:
     complaints = pd.read_csv('data/complaints.csv') 
     try:
         engine = create_engine(postgres_connection_string)
-        complaints.to_sql('Complaints', engine, if_exists = 'replace')                
+        complaints.to_sql('complaints', engine, if_exists = 'replace')                
     except Exception as err:
         logger.error("Error: %s" % err)
         result = False
@@ -191,7 +191,7 @@ def value_counts_of_shooting_fatalities(context: AssetExecutionContext, shooting
     return sh_vc
 
 @asset
-def piechart_percentages_of_fatalities(value_counts_of_shooting_fatalities) -> MaterializeResult:
+def pie_chart_percentages_of_fatalities(value_counts_of_shooting_fatalities) -> MaterializeResult:
     plt.pie(value_counts_of_shooting_fatalities,labels = value_counts_of_shooting_fatalities.index, autopct ='%1.1f%%', colors = ['skyblue','lightcoral'])
     plt.axis('equal')
 
@@ -205,4 +205,65 @@ def piechart_percentages_of_fatalities(value_counts_of_shooting_fatalities) -> M
     return MaterializeResult(
         metadata={"Percentage Of Fatalities vs Non Fatal Shootings": MetadataValue.md(md_content)}
     )
+
+import pandas.io.sql as sqlio
+
+@asset(deps=[extract_complaints])
+def complaints_df(
+    context: AssetExecutionContext
+):
+    engine = create_engine(postgres_connection_string)
+    with engine.connect() as connection:
+        complaints_df = sqlio.read_sql_query("SELECT * FROM complaints", connection)
     
+    context.add_output_metadata(
+        metadata = {
+            "num_records": len(complaints_df),
+            "preview": MetadataValue.md(complaints_df.head().to_markdown()),            
+        }
+    )
+
+    return complaints_df
+
+@asset(deps=[extract_arrests])
+def arrests_df(
+    context: AssetExecutionContext
+) -> pd.DataFrame:
+    
+    client = MongoClient(mongo_connection_string)
+    arrests_db = client["nypd_analysis"]
+    arrests_collection = arrests_db["arrests"]
+    collection_name = "arrests"
+    collection = arrests_db[collection_name]
+    data = list(collection.find())
+    client.close()
+    arrests_df = pd.DataFrame(data)
+    context.add_output_metadata(
+            metadata={
+                "num_records": len(arrests_df),
+                "preview": MetadataValue.md(arrests_df.head().to_markdown()),
+            }
+        )
+
+    return arrests_df
+
+@asset
+def value_counts_of_complaints_offenses(complaints_df):
+    complaints_offenses_vc = [1]
+    return complaints_offenses_vc
+
+@asset
+def value_counts_of_arrests_offenses(arrests_df):
+    arrests_offenses_vc = [1]
+    return arrests_offenses_vc
+
+@asset
+def value_counts_of_arrests_and_complaints(value_counts_of_arrests_offenses, value_counts_of_complaints_offenses):
+    arrests_complaints_value_counts= [1]
+    return arrests_complaints_vc
+
+@asset
+def bar_chart_types_of_offenses_in_arrests_and_complaints(value_counts_of_arrests_and_complaints):
+
+    return true
+
