@@ -120,7 +120,7 @@ def load_files_into_db_job():
 
 
 
-from dagster import MaterializeResult, MetadataValue
+from dagster import MaterializeResult, MetadataValue, AssetExecutionContext
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -128,7 +128,10 @@ from io import BytesIO
 import base64
 
 @asset(deps=[extract_shootings])
-def shootings_per_month_hist() -> MaterializeResult:
+def shootings_df(
+    context: AssetExecutionContext
+) -> pd.DataFrame:
+    
     client = MongoClient(mongo_connection_string)
     shootings_db = client["nypd_analysis"]
     shootings_collection = shootings_db["shootings"]
@@ -136,11 +139,38 @@ def shootings_per_month_hist() -> MaterializeResult:
     collection=shootings_db[collection_name]
     data = list(collection.find())
     client.close()
-    df = pd.DataFrame(data)
-    df['month'] = pd.to_datetime(df['occur_date']).dt.month
+    shootings_df = pd.DataFrame(data)
+    context.add_output_metadata(
+            metadata={
+                "num_records": len(shootings_df),
+                "preview": MetadataValue.md(shootings_df.head().to_markdown()),
+            }
+        )
+
+    return shootings_df
+
+@asset
+def shootings_per_month_df(
+    context: AssetExecutionContext,
+    shootings_df
+) -> pd.api.typing.DataFrameGroupBy:
+    shootings_df['month'] = pd.to_datetime(shootings_df['occur_date']).dt.month
+    group_month = shootings_df.groupby('month')['incident_key'].count()
+    context.add_output_metadata(
+            metadata={
+                "num_records": len(shootings_df),
+                "preview": MetadataValue.md(group_month.to_markdown()),
+            }
+        )    
     
-    sns.histplot(data = df, x="month",color='skyblue', discrete = True)
+    return group_month
+
+@asset
+def histogram_shootings_per_month_hist(shootings_per_month_df) -> MaterializeResult:
+    shootings_per_month_df = pd.DataFrame(shootings_per_month_df)
+    sns.barplot(data = shootings_per_month_df, x="month", y="incident_key",color='skyblue')
     plt.xlabel('Month')
+    plt.ylabel('Counts')
     buffer = BytesIO()
     plt.savefig(buffer, format = "png")
     image_data = base64.b64encode(buffer.getvalue())
@@ -153,3 +183,26 @@ def shootings_per_month_hist() -> MaterializeResult:
     )
 
 
+@asset
+def value_counts_of_shooting_fatalities(context: AssetExecutionContext, shootings_df) -> pd.Series:
+    shootings_df['statistical_murder_flag'] = shootings_df['statistical_murder_flag'].map({'N':'No','Y':'Yes'})
+    sh_vc = shootings_df['statistical_murder_flag'].value_counts()
+    context.add_output_metadata(metadata = {"Value Counts of Shooting Fatalities": MetadataValue.md(sh_vc.to_markdown())})
+    return sh_vc
+
+@asset
+def piechart_percentages_of_fatalities(value_counts_of_shooting_fatalities) -> MaterializeResult:
+    plt.pie(value_counts_of_shooting_fatalities,labels = value_counts_of_shooting_fatalities.index, autopct ='%1.1f%%', colors = ['skyblue','lightcoral'])
+    plt.axis('equal')
+
+    buffer = BytesIO()
+    plt.savefig(buffer, format = "png")
+    image_data = base64.b64encode(buffer.getvalue())
+
+    md_content = f"![img](data:image/png;base64,{image_data.decode()})"
+
+
+    return MaterializeResult(
+        metadata={"Percentage Of Fatalities vs Non Fatal Shootings": MetadataValue.md(md_content)}
+    )
+    
