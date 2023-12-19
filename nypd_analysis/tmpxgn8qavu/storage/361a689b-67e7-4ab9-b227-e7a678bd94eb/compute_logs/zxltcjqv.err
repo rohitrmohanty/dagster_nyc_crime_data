@@ -1,0 +1,82 @@
+[32m2023-12-19 19:13:21 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 361a689b-67e7-4ab9-b227-e7a678bd94eb - 31445 - LOGS_CAPTURED - Started capturing logs in process (pid: 31445).
+[32m2023-12-19 19:13:21 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 361a689b-67e7-4ab9-b227-e7a678bd94eb - 31445 - arrests_for_most_common_age_group - STEP_START - Started execution of step "arrests_for_most_common_age_group".
+[32m2023-12-19 19:13:21 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 361a689b-67e7-4ab9-b227-e7a678bd94eb - arrests_for_most_common_age_group - Loading file from: /Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_project/nypd_analysis/tmpxgn8qavu/storage/arrests_df using PickledObjectFilesystemIOManager...
+[32m2023-12-19 19:13:21 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 361a689b-67e7-4ab9-b227-e7a678bd94eb - 31445 - arrests_for_most_common_age_group - ASSET_OBSERVATION - DagsterEventType.ASSET_OBSERVATION for step arrests_for_most_common_age_group
+[32m2023-12-19 19:13:21 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 361a689b-67e7-4ab9-b227-e7a678bd94eb - 31445 - arrests_for_most_common_age_group - LOADED_INPUT - Loaded input "arrests_df" using input manager "io_manager"
+[32m2023-12-19 19:13:21 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 361a689b-67e7-4ab9-b227-e7a678bd94eb - 31445 - arrests_for_most_common_age_group - STEP_INPUT - Got input "arrests_df" of type "Any". (Type check passed).
+[32m2023-12-19 19:13:23 +0000[0m - dagster - [34mERROR[0m - [31m__ASSET_JOB - 361a689b-67e7-4ab9-b227-e7a678bd94eb - 31445 - arrests_for_most_common_age_group - STEP_FAILURE - Execution of step "arrests_for_most_common_age_group" failed.
+
+dagster._core.errors.DagsterExecutionStepExecutionError: Error occurred while executing op "arrests_for_most_common_age_group"::
+
+sqlalchemy.exc.ProgrammingError: (psycopg2.ProgrammingError) can't adapt type 'ObjectId'
+[SQL: INSERT INTO arrests_for_most_common_age_group (index, _id, arrest_key, arrest_date, pd_cd, pd_desc, ky_cd, ofns_desc, law_code, law_cat_cd, arrest_boro, arrest_precinct, jurisdiction_code, age_group, perp_sex, perp_race, x_coord_cd, y_coord_cd, latit ... 614233 characters truncated ... region_92fq_4b7q__999)s, %(C@computed_region_sbqj_enih__999)s, %(C@computed_region_efsh_h5xi__999)s)]
+[parameters: {'geocoded_column__0': {'type': 'Point', 'coordinates': [-73.90965, 40.655923]}, 'arrest_key__0': '262984267', 'C@computed_region_92fq_4b7q__0': '25', 'y_coord_cd__0': '178259', 'pd_cd__0': '515', 'x_coord_cd__0': '1009318', 'arrest_boro__0': 'K', 'ky_cd__0': '117', 'age_group__0': '25-44', 'index__0': 1, 'ofns_desc__0': 'DANGEROUS DRUGS', 'law_cat_cd__0': 'F', 'law_code__0': 'PL 2203901', 'C@computed_region_sbqj_enih__0': '46', 'arrest_precinct__0': '73', 'perp_race__0': 'BLACK', 'C@computed_region_f5dn_yrer__0': '55', 'pd_desc__0': 'CONTROLLED SUBSTANCE,SALE 3', 'latitude__0': '40.655923', 'perp_sex__0': 'M', '_id__0': ObjectId('658047b79d56dd013b321aba'), 'arrest_date__0': '2023-02-03T00:00:00.000', 'C@computed_region_yeji_bk3q__0': '2', 'jurisdiction_code__0': '0', 'C@computed_region_efsh_h5xi__0': '17614', 'longitude__0': '-73.90965', 'geocoded_column__1': {'type': 'Point', 'coordinates': [-74.00712, 40.602468]}, 'arrest_key__1': '263664549', 'C@computed_region_92fq_4b7q__1': '44', 'y_coord_cd__1': '158771', 'pd_cd__1': '105', 'x_coord_cd__1': '982272', 'arrest_boro__1': 'K', 'ky_cd__1': '106', 'age_group__1': '25-44', 'index__1': 2, 'ofns_desc__1': 'FELONY ASSAULT', 'law_cat_cd__1': 'F', 'law_code__1': 'PL 1211200', 'C@computed_region_sbqj_enih__1': '37', 'arrest_precinct__1': '62', 'perp_race__1': 'WHITE', 'C@computed_region_f5dn_yrer__1': '1', 'pd_desc__1': 'STRANGULATION 1ST', 'latitude__1': '40.602468', 'perp_sex__1': 'M', '_id__1': ObjectId('658047b79d56dd013b321abb'), 'arrest_date__1': '2023-02-15T00:00:00.000', 'C@computed_region_yeji_bk3q__1': '2', 'jurisdiction_code__1': '0' ... 25900 parameters truncated ... 'C@computed_region_92fq_4b7q__998': '24', 'y_coord_cd__998': '195236', 'pd_cd__998': '105', 'x_coord_cd__998': '1037435', 'arrest_boro__998': 'Q', 'ky_cd__998': '106', 'age_group__998': '25-44', 'index__998': 1723, 'ofns_desc__998': 'FELONY ASSAULT', 'law_cat_cd__998': 'F', 'law_code__998': 'PL 1211200', 'C@computed_region_sbqj_enih__998': '61', 'arrest_precinct__998': '103', 'perp_race__998': 'BLACK', 'C@computed_region_f5dn_yrer__998': '41', 'pd_desc__998': 'STRANGULATION 1ST', 'latitude__998': '40.702396', 'perp_sex__998': 'F', '_id__998': ObjectId('658047b89d56dd013b322174'), 'arrest_date__998': '2023-03-11T00:00:00.000', 'C@computed_region_yeji_bk3q__998': '3', 'jurisdiction_code__998': '0', 'C@computed_region_efsh_h5xi__998': '24670', 'longitude__998': '-73.808183', 'geocoded_column__999': {'type': 'Point', 'coordinates': [-73.9737053160275, 40.6305998504358]}, 'arrest_key__999': '261519737', 'C@computed_region_92fq_4b7q__999': '18', 'y_coord_cd__999': '169019', 'pd_cd__999': '681', 'x_coord_cd__999': '991549', 'arrest_boro__999': 'K', 'ky_cd__999': '233', 'age_group__999': '25-44', 'index__999': 1724, 'ofns_desc__999': 'SEX CRIMES', 'law_cat_cd__999': 'M', 'law_code__999': 'PL 2601001', 'C@computed_region_sbqj_enih__999': '43', 'arrest_precinct__999': '70', 'perp_race__999': 'WHITE', 'C@computed_region_f5dn_yrer__999': '60', 'pd_desc__999': 'CHILD, ENDANGERING WELFARE', 'latitude__999': '40.6305998504358', 'perp_sex__999': 'F', '_id__999': ObjectId('658047b89d56dd013b322175'), 'arrest_date__999': '2023-01-07T00:00:00.000', 'C@computed_region_yeji_bk3q__999': '2', 'jurisdiction_code__999': '0', 'C@computed_region_efsh_h5xi__999': '13513', 'longitude__999': '-73.9737053160275'}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+Stack Trace:
+  File "/Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_env/lib/python3.11/site-packages/dagster/_core/execution/plan/utils.py", line 54, in op_execution_error_boundary
+    yield
+  File "/Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_env/lib/python3.11/site-packages/dagster/_utils/__init__.py", line 465, in iterate_with_context
+    next_output = next(iterator)
+                  ^^^^^^^^^^^^^^
+  File "/Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_env/lib/python3.11/site-packages/dagster/_core/execution/plan/compute_generator.py", line 131, in _coerce_op_compute_fn_to_iterator
+    result = invoke_compute_fn(
+             ^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_env/lib/python3.11/site-packages/dagster/_core/execution/plan/compute_generator.py", line 125, in invoke_compute_fn
+    return fn(context, **args_to_pass) if context_arg_provided else fn(**args_to_pass)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_project/nypd_analysis/nypd_analysis/assets.py", line 613, in arrests_for_most_common_age_group
+    arrests_for_most_common_age_group.to_sql('arrests_for_most_common_age_group',
+  File "/Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_env/lib/python3.11/site-packages/pandas/util/_decorators.py", line 333, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_env/lib/python3.11/site-packages/pandas/core/generic.py", line 3008, in to_sql
+    return sql.to_sql(
+           ^^^^^^^^^^^
+  File "/Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_env/lib/python3.11/site-packages/pandas/io/sql.py", line 788, in to_sql
+    return pandas_sql.to_sql(
+           ^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_env/lib/python3.11/site-packages/pandas/io/sql.py", line 1958, in to_sql
+    total_inserted = sql_engine.insert_records(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_env/lib/python3.11/site-packages/pandas/io/sql.py", line 1507, in insert_records
+    raise err
+  File "/Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_env/lib/python3.11/site-packages/pandas/io/sql.py", line 1498, in insert_records
+    return table.insert(chunksize=chunksize, method=method)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_env/lib/python3.11/site-packages/pandas/io/sql.py", line 1059, in insert
+    num_inserted = exec_insert(conn, keys, chunk_iter)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_env/lib/python3.11/site-packages/pandas/io/sql.py", line 951, in _execute_insert
+    result = conn.execute(self.table.insert(), data)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_env/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1416, in execute
+    return meth(
+           ^^^^^
+  File "/Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_env/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 516, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_env/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1639, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_env/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1843, in _execute_context
+    return self._exec_insertmany_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_env/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2120, in _exec_insertmany_context
+    self._handle_dbapi_exception(
+  File "/Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_env/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2343, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_env/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2112, in _exec_insertmany_context
+    dialect.do_execute(
+  File "/Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_env/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 922, in do_execute
+    cursor.execute(statement, parameters)
+
+The above exception was caused by the following exception:
+psycopg2.ProgrammingError: can't adapt type 'ObjectId'
+
+Stack Trace:
+  File "/Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_env/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2112, in _exec_insertmany_context
+    dialect.do_execute(
+  File "/Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_env/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 922, in do_execute
+    cursor.execute(statement, parameters)
+[0m

@@ -1,0 +1,16 @@
+[32m2023-12-19 19:16:34 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - a92a286b-fd5a-47cd-91b2-251fdc654418 - 31748 - LOGS_CAPTURED - Started capturing logs in process (pid: 31748).
+[32m2023-12-19 19:16:34 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - a92a286b-fd5a-47cd-91b2-251fdc654418 - 31748 - arrests_for_most_common_age_group - STEP_START - Started execution of step "arrests_for_most_common_age_group".
+[32m2023-12-19 19:16:34 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - a92a286b-fd5a-47cd-91b2-251fdc654418 - arrests_for_most_common_age_group - Loading file from: /Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_project/nypd_analysis/tmpxgn8qavu/storage/arrests_df using PickledObjectFilesystemIOManager...
+[32m2023-12-19 19:16:35 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - a92a286b-fd5a-47cd-91b2-251fdc654418 - 31748 - arrests_for_most_common_age_group - ASSET_OBSERVATION - DagsterEventType.ASSET_OBSERVATION for step arrests_for_most_common_age_group
+[32m2023-12-19 19:16:35 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - a92a286b-fd5a-47cd-91b2-251fdc654418 - 31748 - arrests_for_most_common_age_group - LOADED_INPUT - Loaded input "arrests_df" using input manager "io_manager"
+[32m2023-12-19 19:16:35 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - a92a286b-fd5a-47cd-91b2-251fdc654418 - 31748 - arrests_for_most_common_age_group - STEP_INPUT - Got input "arrests_df" of type "Any". (Type check passed).
+/Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_project/nypd_analysis/nypd_analysis/assets.py:609: SettingWithCopyWarning: 
+A value is trying to be set on a copy of a slice from a DataFrame
+
+See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+  arrests_for_most_common_age_group.drop(
+[32m2023-12-19 19:16:40 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - a92a286b-fd5a-47cd-91b2-251fdc654418 - 31748 - arrests_for_most_common_age_group - STEP_OUTPUT - Yielded output "result" of type "DataFrame". (Type check passed).
+[32m2023-12-19 19:16:40 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - a92a286b-fd5a-47cd-91b2-251fdc654418 - arrests_for_most_common_age_group - Writing file at: /Users/rohitrmohanty/Desktop/NCI Modules/DBAP/dap_project/nypd_analysis/tmpxgn8qavu/storage/arrests_for_most_common_age_group using PickledObjectFilesystemIOManager...
+[32m2023-12-19 19:16:40 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - a92a286b-fd5a-47cd-91b2-251fdc654418 - 31748 - arrests_for_most_common_age_group - ASSET_MATERIALIZATION - Materialized value arrests_for_most_common_age_group.
+[32m2023-12-19 19:16:40 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - a92a286b-fd5a-47cd-91b2-251fdc654418 - 31748 - arrests_for_most_common_age_group - HANDLED_OUTPUT - Handled output "result" using IO manager "io_manager"
+[32m2023-12-19 19:16:40 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - a92a286b-fd5a-47cd-91b2-251fdc654418 - 31748 - arrests_for_most_common_age_group - STEP_SUCCESS - Finished execution of step "arrests_for_most_common_age_group" in 5.55s.

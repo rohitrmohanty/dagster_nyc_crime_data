@@ -192,6 +192,7 @@ def shootings_df(
     return shootings_df
 
 
+# Creating the dataframe to store the value counts of shootings by month
 @asset
 def shootings_per_month_df(
     context: AssetExecutionContext,
@@ -218,6 +219,7 @@ def shootings_per_month_df(
     return shootings_per_month_df
 
 
+# Asset for creating the line plot of Shootings Per Month
 @asset
 def lineplot_shootings_per_month_hist(shootings_per_month_df) -> MaterializeResult:
     # Calculate the max y value
@@ -247,6 +249,7 @@ def lineplot_shootings_per_month_hist(shootings_per_month_df) -> MaterializeResu
     )
 
 
+# Asset for creating the datat frame of counts of Fatalities vs Non Fatalities in the shootings dataset
 @asset
 def value_counts_of_shooting_fatalities(context: AssetExecutionContext, shootings_df) -> pd.Series:
     # converts the Y and N values to full strings Yes and No to be showing in the plot
@@ -294,7 +297,7 @@ def pie_chart_percentages_of_fatalities(value_counts_of_shooting_fatalities) -> 
 #
 #
 
-# Asset for creating the a dataframe with all the data to be used subsequently by downstream assets
+# Asset for creating the complaints dataframe with all the data to be used subsequently by downstream assets
 @asset(deps=[extract_complaints])
 def complaints_df(
     context: AssetExecutionContext
@@ -378,13 +381,12 @@ def complaints_by_age_group(
     engine = create_engine(postgres_connection_string)
     # uses the pandas to_sql function to load the dataframe into postgres
     complaints_by_age_group.to_sql(
-        complaints_by_age_group, engine, if_exists='replace')
+        "complaints_by_age_group", engine, if_exists='replace')
 
     return complaints_by_age_group
 
+
 # Asset for creating a Bar Chart of Complaints by Age Group and Gender
-
-
 @asset
 def bar_chart_complaints_by_age_group_and_gender(complaints_by_age_group) -> MaterializeResult:
     # creates and Age Group array of the age groups of interest
@@ -423,9 +425,8 @@ def bar_chart_complaints_by_age_group_and_gender(complaints_by_age_group) -> Mat
             "Complaints by Age Group and Gender": MetadataValue.md(md_content)}
     )
 
+
 # Asset for creating a dataframe containing only the observations for the most common age group 25-44
-
-
 @asset
 def complaints_for_most_common_age_group(
     context: AssetExecutionContext,
@@ -449,9 +450,8 @@ def complaints_for_most_common_age_group(
 
     return complaints_for_most_common_age_group
 
+
 # Asset for creating the bar chart for the Complaints made by the most common age group 25-44
-
-
 @asset
 def bar_chart_complaints_for_most_common_age_group(complaints_for_most_common_age_group) -> MaterializeResult:
     # Query the dataset only for Female or Male observations
@@ -496,19 +496,23 @@ def bar_chart_complaints_for_most_common_age_group(complaints_for_most_common_ag
 #
 
 
+# Asset for creating the assets dataframe to be used by all downstream assets
 @asset(deps=[extract_arrests])
 def arrests_df(
     context: AssetExecutionContext
 ) -> pd.DataFrame:
 
-    # creates
+    # creates a connection to mongodb server
     client = MongoClient(mongo_connection_string)
     arrests_db = client["nypd_analysis"]
     collection_name = "arrests"
     collection = arrests_db[collection_name]
+    # finds all the related documents in the collection
     data = list(collection.find())
     client.close()
+    # creates a data frame to be used
     arrests_df = pd.DataFrame(data)
+    # adds some metadata related to the created data frame to be stored as a dagster asset
     context.add_output_metadata(
         metadata={
             "num_records": len(arrests_df),
@@ -519,27 +523,40 @@ def arrests_df(
     return arrests_df
 
 
+# Asset for creating a dataframe consisting of the value counts of each type of felony in the arrests dataset
 @asset
 def value_counts_of_arrests_offenses(
     context: AssetExecutionContext,
     arrests_df
 ) -> pd.DataFrame:
+    # creates a series object of the value counts of each type of felony in the law_cat_cd column
     arrests_offenses_count = arrests_df['law_cat_cd'].value_counts()
+    # converts the series object into a dataframe
     arrests_offenses_count_dataframe = pd.DataFrame(arrests_offenses_count)
+    # changes the index of the created dataframe to OFFENSES for merging with the similar dataframe created in complaints
     arrests_offenses_count_dataframe.index.names = ['OFFENSE']
+    # drops the irregular values of felony types for which the value was an integer called 9
     arrests_offenses_count_dataframe.drop(['9'], inplace=True)
+    # formats the values inthe dataframe to proper strings to be used in the visuals as well as match the ones used in the complaints_offenses_count dataframe
     arrests_offenses_count_dataframe.rename(
         index={'M': 'Misdemeanor', 'F': 'Felony', 'V': 'Violation', 'I': 'Infraction'}, inplace=True)
-
+    # adds some metadata about the created dataframe to be used
     context.add_output_metadata(
         metadata={
             "Arrest Counts Per Offense": MetadataValue.md(arrests_offenses_count_dataframe.to_markdown()),
         }
     )
 
+    # creates a connection to the postgres server
+    engine = create_engine(postgres_connection_string)
+    # uses the pandas to_sql function to load the dataframe into postgres
+    arrests_offenses_count_dataframe.to_sql(
+        "arrests_offenses_counts", engine, if_exists='replace')
+
     return arrests_offenses_count_dataframe
 
 
+# Asset for creating the bar chart of Arrest by Age Group and The genders within each age group
 @asset
 def bar_chart_arrests_by_age_and_gender(arrests_df) -> MaterializeResult:
     arrests_df.perp_sex = arrests_df.perp_sex.map({'F': 'Female', 'M': 'Male'})
@@ -574,25 +591,38 @@ def bar_chart_arrests_by_age_and_gender(arrests_df) -> MaterializeResult:
     )
 
 
+# Asset for creating the dataframe consisting of the observations only related to the most common age group 25-44
 @asset
 def arrests_for_most_common_age_group(
     context: AssetExecutionContext,
     arrests_df
 ) -> pd.DataFrame:
+    # creates a subset of the dataframe consisting of the observations only related to the most common age group
     arrests_for_most_common_age_group = arrests_df[arrests_df['age_group'] == '25-44']
-
+    # adds some metadata about the created dataframe to be viewed inside dagster
     context.add_output_metadata(
         metadata={
             "Arrests For The Most Common Age Group (25-44)": MetadataValue.md(arrests_for_most_common_age_group.head().to_markdown()),
         }
     )
+    # drops the leftover column from mongodb
+    arrests_for_most_common_age_group.drop(
+        ['_id', 'geocoded_column'], axis=1, inplace=True)
+    # creates a connection to the postgres server
+    engine = create_engine(postgres_connection_string)
+    # uses the pandas to_sql function to load the dataframe into postgres
+    arrests_for_most_common_age_group.to_sql('arrests_for_most_common_age_group',
+                                             engine, if_exists='replace')
+
     return arrests_for_most_common_age_group
 
 
+# Asset for creating the count plot of felony types per race in the arrests dataset
 @asset
 def bar_chart_arrests_by_felony_type_for_most_common_age_group(arrests_for_most_common_age_group) -> MaterializeResult:
     sns.set_theme(style="whitegrid")
     plt.subplots(figsize=(22, 14))
+    # creates the plot for the arrests by race for the most common age group 25044
     sns.countplot(data=arrests_for_most_common_age_group,
                   x='perp_race', hue='perp_sex', palette='pastel')
     plt.xlabel('Race of arrested people')
@@ -624,30 +654,41 @@ def bar_chart_arrests_by_felony_type_for_most_common_age_group(arrests_for_most_
 #
 #
 
-
+# Asset for creating the merged dataframe of Counts of Felony Types in both the Arrests and Complaints Datasets
 @asset
 def value_counts_of_arrests_and_complaints(
     context: AssetExecutionContext,
     value_counts_of_arrests_offenses,
     value_counts_of_complaints_offenses
 ) -> pd.DataFrame:
+    # merges the two dataframes using the OFFENSES index
     complaint_arrest_joined = pd.merge(value_counts_of_complaints_offenses,
                                        value_counts_of_arrests_offenses, left_index=True, right_index=True)
+    # renames the count columns into more understandable column names
     complaint_arrest_joined = complaint_arrest_joined.rename(
         columns={'count_x': 'Complaint Offense', 'count_y': 'Arrest Offense'})
-
+    # adds some metadata related to the created dataframe to be stored in the dagster asset
     context.add_output_metadata(
         metadata={
             "Joined Dataframe for Arrests and Complaints per Offense": MetadataValue.md(complaint_arrest_joined.to_markdown()),
         }
     )
+
+    # creates a connection to the postgres server
+    engine = create_engine(postgres_connection_string)
+    # uses the pandas to_sql function to load the dataframe into postgres
+    complaint_arrest_joined.to_sql(
+        'value_counts_of_arrests_and_complaints', engine, if_exists='replace')
     return complaint_arrest_joined
+
+# Asset for creating the bar chart using the merged dataframe of felony type for Arrests and Complaints
 
 
 @asset
 def bar_chart_types_of_offenses_in_arrests_and_complaints(value_counts_of_arrests_and_complaints) -> MaterializeResult:
+    # increases the size of the plot
     fig, ax = plt.subplots(figsize=(10, 6))
-
+    # creates the plot with the merged dataframe for types of felonies in both complaints and arrests
     value_counts_of_arrests_and_complaints.plot(kind='bar', ax=ax, width=0.8)
 
     # Adding labels and title
