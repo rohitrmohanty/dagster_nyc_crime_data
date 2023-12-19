@@ -291,6 +291,37 @@ def pie_chart_percentages_of_fatalities(value_counts_of_shooting_fatalities) -> 
     )
 
 
+# Asset for creating a dataframe consisting of value counts of shooting by borough
+@asset
+def value_counts_of_shootings_by_area(
+    context: AssetExecutionContext,
+    shootings_df
+) -> pd.DataFrame:
+    # creates a series object consisting of the value counts per BORO
+    # converts the series object into a dataframe
+    shoots_boro = pd.DataFrame(shootings_df['boro'].value_counts())
+    # Renames the BORO field to shootings to remember which dataset it came from when it is merged with arrests
+    shoots_boro = shoots_boro.rename(columns={'boro': 'SHOOTINGS'})
+    # renames the index to BORO for easier merging with the arrests dataframe of the same data type
+    shoots_boro.index.names = ['BORO']
+
+    # add some basic metadata about the query as a dagster asset
+    context.add_output_metadata(
+        metadata={
+            "num_records": len(shoots_boro),
+            "preview": MetadataValue.md(shoots_boro.to_markdown()),
+        }
+    )
+
+    # creates a connection to the postgres server
+    engine = create_engine(postgres_connection_string)
+    # uses the pandas to_sql function to load the dataframe into postgres
+    shoots_boro.to_sql('value_counts_of_shootings_by_area',
+                       engine, if_exists='replace')
+
+    return shoots_boro
+
+
 #
 #
 #  Complaints Related Assets
@@ -648,6 +679,38 @@ def bar_chart_arrests_by_felony_type_for_most_common_age_group(arrests_for_most_
     )
 
 
+# Asset for creating a dataframe consisting of value counts of arrests by borough
+@asset
+def value_counts_of_arrests_by_area(
+    context: AssetExecutionContext,
+    arrests_df
+):
+
+    arrests_df['arrest_boro'] = arrests_df['arrest_boro'].map(
+        {'K': 'BROOKLYN', 'B': 'BRONX', 'M': 'MANHATTAN', 'Q': 'QUEENS', 'S': 'STATEN ISLAND'})
+    arrest_boro_dataframe = pd.DataFrame(
+        arrests_df['arrest_boro'].value_counts())
+    arrest_boro_dataframe = arrest_boro_dataframe.rename(
+        columns={'ARREST_BORO': 'ARRESTS'})
+    arrest_boro_dataframe.index.names = ['BORO']
+
+    # add some basic metadata about the query as a dagster asset
+    context.add_output_metadata(
+        metadata={
+            "num_records": len(arrest_boro_dataframe),
+            "preview": MetadataValue.md(arrest_boro_dataframe.to_markdown()),
+        }
+    )
+
+    # creates a connection to the postgres server
+    engine = create_engine(postgres_connection_string)
+    # uses the pandas to_sql function to load the dataframe into postgres
+    arrest_boro_dataframe.to_sql(
+        'value_counts_of_arrests_by_area', engine, if_exists='replace')
+
+    return arrest_boro_dataframe
+
+
 #
 #
 #  Arrests AND Complaints Related Assets
@@ -713,3 +776,40 @@ def bar_chart_types_of_offenses_in_arrests_and_complaints(value_counts_of_arrest
         metadata={
             "Comparison of Offenses in Complaints and Arrests": MetadataValue.md(md_content)}
     )
+
+
+#
+#
+#  Arrests AND Shootings Related Assets
+#
+#
+
+
+# Asset for creating a dataframe consisting of value counts of shootings and arrests by borough
+@asset
+def value_counts_of_arrests_and_shootings_by_area(
+    context: AssetExecutionContext,
+    value_counts_of_arrests_by_area,
+    value_counts_of_shootings_by_area
+):
+    arrests_and_shootings_by_area = pd.merge(
+        value_counts_of_shootings_by_area, value_counts_of_arrests_by_area, left_index=True, right_index=True)
+
+    arrests_and_shootings_by_area = arrests_and_shootings_by_area.rename(
+        columns={'count_x': 'Shootings', 'count_y': 'Arrests'})
+
+    # add some basic metadata about the query as a dagster asset
+    context.add_output_metadata(
+        metadata={
+            "num_records": len(arrests_and_shootings_by_area),
+            "preview": MetadataValue.md(arrests_and_shootings_by_area.to_markdown()),
+        }
+    )
+
+    # creates a connection to the postgres server
+    engine = create_engine(postgres_connection_string)
+    # uses the pandas to_sql function to load the dataframe into postgres
+    arrests_and_shootings_by_area.to_sql(
+        'value_counts_of_arrests_and_shootings_by_area', engine, if_exists='replace')
+
+    return arrests_and_shootings_by_area
