@@ -22,6 +22,9 @@ import matplotlib.pyplot as plt
 from io import BytesIO
 import base64
 
+# imports for creating a map of arrests and shootings
+import geopandas
+
 # Token for New York Open Data (Needs to be in an env file but didn't get enough time)
 headers = {"X-App-Token": "WGwrytV3FHVDoouYC91Qp7X8c"}
 
@@ -684,7 +687,7 @@ def bar_chart_arrests_by_felony_type_for_most_common_age_group(arrests_for_most_
 def value_counts_of_arrests_by_area(
     context: AssetExecutionContext,
     arrests_df
-):
+) -> pd.DataFrame:
 
     arrests_df['arrest_boro'] = arrests_df['arrest_boro'].map(
         {'K': 'BROOKLYN', 'B': 'BRONX', 'M': 'MANHATTAN', 'Q': 'QUEENS', 'S': 'STATEN ISLAND'})
@@ -791,7 +794,7 @@ def value_counts_of_arrests_and_shootings_by_area(
     context: AssetExecutionContext,
     value_counts_of_arrests_by_area,
     value_counts_of_shootings_by_area
-):
+) -> pd.DataFrame:
     arrests_and_shootings_by_area = pd.merge(
         value_counts_of_shootings_by_area, value_counts_of_arrests_by_area, left_index=True, right_index=True)
 
@@ -813,3 +816,62 @@ def value_counts_of_arrests_and_shootings_by_area(
         'value_counts_of_arrests_and_shootings_by_area', engine, if_exists='replace')
 
     return arrests_and_shootings_by_area
+
+
+# Asset for creating a merged data frame consisting of value counts of shootings and arrests by borough as well as geopandas polygon data
+@asset
+def geopandas_dataframe_of_arrests_and_shootings_by_area(
+    context: AssetExecutionContext,
+    value_counts_of_arrests_and_shootings_by_area
+) -> pd.DataFrame:
+    nyc_shp = geopandas.read_file(geopandas.datasets.get_path('nybb'))
+    # create a dataframe
+    con_fa_nyc = pd.DataFrame()
+    con_fa_nyc['BoroName'] = ['Bronx', 'Brooklyn',
+                              'Manhattan', 'Queens', 'Staten Island']
+    con_fa_nyc['Shootings'] = value_counts_of_arrests_and_shootings_by_area['Shootings'].tolist()
+    con_fa_nyc['Arrests'] = value_counts_of_arrests_and_shootings_by_area['Arrests'].tolist()
+    con_fa_nyc['longitude'] = [985000, 1000000, 970000, 1040000, 925000]
+    con_fa_nyc['latitude'] = [180000, 250000, 220000, 200000, 150000]
+    # merge con_fa_nyc and nyc_shp
+    nyc_shp = nyc_shp.merge(con_fa_nyc, on='BoroName')
+
+    # add some basic metadata about the query as a dagster asset
+    context.add_output_metadata(
+        metadata={
+            "num_records": len(nyc_shp),
+            "preview": MetadataValue.md(nyc_shp.to_markdown())
+        }
+    )
+
+    return nyc_shp
+
+
+# Asset for creating a map consisting of value counts of shootings and arrests by borough as well as geopandas polygon data
+@asset
+def map_of_arrests_and_shootings_by_area(geopandas_dataframe_of_arrests_and_shootings_by_area) -> MaterializeResult:
+
+    # plot new york city
+    ax = geopandas_dataframe_of_arrests_and_shootings_by_area.plot(column='Arrests', figsize=(
+        10, 10), alpha=0.5, edgecolor='k', cmap='Reds', legend=True, scheme="quantiles")
+    # add boroughs' names with numbers of confirmed cases and fatalities
+    for i in range(len(geopandas_dataframe_of_arrests_and_shootings_by_area)):
+        plt.text(geopandas_dataframe_of_arrests_and_shootings_by_area.longitude[i], geopandas_dataframe_of_arrests_and_shootings_by_area.latitude[i], "{}\nArrests: {}\nShootings: {}".format(
+            geopandas_dataframe_of_arrests_and_shootings_by_area.BoroName[i], geopandas_dataframe_of_arrests_and_shootings_by_area.Arrests[i], geopandas_dataframe_of_arrests_and_shootings_by_area.Shootings[i]), size=13)
+    leg = ax.get_legend()
+    leg.set_bbox_to_anchor((1.3, 1))
+    plt.tight_layout()
+    # starts a buffer stream to take the created plot as input
+    buffer = BytesIO()
+    # saves the created plot as a png file
+    plt.savefig(buffer, format="png")
+    # encodes the created plot in b64 encoding
+    image_data = base64.b64encode(buffer.getvalue())
+    # creating a string to be stored in markdown by decoding the created b64 encoding
+    md_content = f"![img](data:image/png;base64,{image_data.decode()})"
+
+    # materializing the created plot as a string output in markdown to be stored as a dagster asset
+    return MaterializeResult(
+        metadata={
+            "Shootings And Arrests By Area for 2023": MetadataValue.md(md_content)}
+    )

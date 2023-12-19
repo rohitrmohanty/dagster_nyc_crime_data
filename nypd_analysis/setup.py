@@ -11,7 +11,9 @@ setup(
         "seaborn",
         "pymongo",
         "psycopg2",
-        "SQLAlchemy"
+        "SQLAlchemy",
+        "geopandas",
+        "mapclassify"
     ],
     extras_require={"dev": ["dagster-webserver", "pytest"]},
 )
