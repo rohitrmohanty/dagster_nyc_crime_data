@@ -52,7 +52,12 @@ def extract_shootings() -> bool:
         #connect to the shootings database
         shootings_db = client["nypd_analysis"]
         #connect to the nypd_analysis collection
-        shootings_collection = shootings_db["shootings"]
+        collection_name = "shootings"
+        shootings_collection = shootings_db[collection_name]
+
+        if collection_name in shootings_db.list_collection_names() and shootings_collection.count!= 0:
+            shootings_collection.drop()
+
         #open the file containing the data
         with open("data/shootings.json","r") as sj:
             #load the josn data from the file
@@ -82,7 +87,12 @@ def extract_arrests() -> bool:
     try:
         client = MongoClient(mongo_connection_string)
         arrests_db = client["nypd_analysis"]
-        arrests_collection = arrests_db["arrests"]
+        collection_name = "arrests"
+        arrests_collection = arrests_db[collection_name]
+
+        if collection_name in arrests_db.list_collection_names() and arrests_collection.count() != 0:
+            arrests_collection.drop()
+
         with open("data/arrests.json","r") as aj:
             data = json.load(aj)
         for arrest in data:
@@ -153,7 +163,7 @@ def shootings_df(
 def shootings_per_month_df(
     context: AssetExecutionContext,
     shootings_df
-) -> pd.api.typing.DataFrameGroupBy:
+) -> pd.DataFrame:
     shootings_df['month'] = pd.to_datetime(shootings_df['occur_date']).dt.month
     group_month = shootings_df.groupby('month')['incident_key'].count()
     context.add_output_metadata(
@@ -163,11 +173,11 @@ def shootings_per_month_df(
             }
         )    
     
-    return group_month
+    shootings_per_month_df = pd.DataFrame(group_month)
+    return shootings_per_month_df
 
 @asset
 def histogram_shootings_per_month_hist(shootings_per_month_df) -> MaterializeResult:
-    shootings_per_month_df = pd.DataFrame(shootings_per_month_df)
     sns.barplot(data = shootings_per_month_df, x="month", y="incident_key",color='skyblue')
     plt.xlabel('Month')
     plt.ylabel('Counts')
@@ -248,22 +258,79 @@ def arrests_df(
     return arrests_df
 
 @asset
-def value_counts_of_complaints_offenses(complaints_df):
-    complaints_offenses_vc = [1]
-    return complaints_offenses_vc
+def value_counts_of_complaints_offenses(
+    context: AssetExecutionContext,
+    complaints_df
+) -> pd.DataFrame:
+    complaints_df['law_cat_cd'] = complaints_df['law_cat_cd'].map({'MISDEMEANOR':'Misdemeanor','FELONY':'Felony','VIOLATION':'Violation'}) 
+
+    complaint_offense_count = complaints_df['law_cat_cd'].value_counts()
+    complaint_offense_count_dataframe = pd.DataFrame(complaint_offense_count)
+    complaint_offense_count_dataframe.index.names = ['OFFENSE']
+    complaint_offense_count_dataframe.loc['Infraction'] = 0
+
+    context.add_output_metadata(
+            metadata={
+                "Complaint Counts Per Offense": MetadataValue.md(complaint_offense_count_dataframe.to_markdown()),
+            }
+        )    
+    return complaint_offense_count_dataframe
 
 @asset
-def value_counts_of_arrests_offenses(arrests_df):
-    arrests_offenses_vc = [1]
-    return arrests_offenses_vc
+def value_counts_of_arrests_offenses(
+    context: AssetExecutionContext,
+    arrests_df
+) -> pd.DataFrame:
+    arrests_offenses_count  =  arrests_df['law_cat_cd'].value_counts()
+    arrests_offenses_count_dataframe = pd.DataFrame(arrests_offenses_count)
+    arrests_offenses_count_dataframe.index.names = ['OFFENSE']
+    arrests_offenses_count_dataframe.loc['law_cat_cd' == '9']
+    context.add_output_metadata(
+        metadata={
+            "Arrest Counts Per Offense": MetadataValue.md(arrests_offenses_count_dataframe.to_markdown()),
+        }
+    )
+
+    return arrests_offenses_count_dataframe
 
 @asset
-def value_counts_of_arrests_and_complaints(value_counts_of_arrests_offenses, value_counts_of_complaints_offenses):
-    arrests_complaints_value_counts= [1]
-    return arrests_complaints_vc
+def value_counts_of_arrests_and_complaints(
+    context: AssetExecutionContext,
+    value_counts_of_arrests_offenses,
+    value_counts_of_complaints_offenses
+):
+    complaint_arrest_joined = pd.merge(value_counts_of_complaints_offenses, value_counts_of_arrests_offenses, left_index = True, right_index = True)
+    complaint_arrest_joined = complaint_arrest_joined.rename(columns = {'LAW_CAT_CD_x':'Complaint Offense','LAW_CAT_CD_y':'Arrest Offense'})
+
+    context.add_output_metadata(
+        metadata={
+            "Joined Dataframe for Arrests and Complaints per Offense": MetadataValue.md(complaint_arrest_joined.to_markdown()),
+        }
+    )
+    return complaint_arrest_joined
 
 @asset
 def bar_chart_types_of_offenses_in_arrests_and_complaints(value_counts_of_arrests_and_complaints):
+    fig, ax = plt.subplots(figsize=(10, 6))
 
-    return true
+    value_counts_of_arrests_and_complaints.plot(kind='bar', ax=ax, width=0.8)
+
+    # Adding labels and title
+    ax.set_xlabel('OFFENSE')
+    ax.set_ylabel('Count')
+    ax.set_title('Comparison of Offense')
+    #for p in plt.gca().patches:
+    #    plt.gca().annotate(f'{p.get_height()}', (p.get_x() + p.get_width() / 2., p.get_height()),
+    #                       ha='center', va='bottom', color='black', fontsize=10)
+        
+    buffer = BytesIO()
+    plt.savefig(buffer, format = "png")
+    image_data = base64.b64encode(buffer.getvalue())
+
+    md_content = f"![img](data:image/png;base64,{image_data.decode()})"
+
+
+    return MaterializeResult(
+        metadata={"Comparison of Offenses in Complaints and Arrests": MetadataValue.md(md_content)}
+    )
 
