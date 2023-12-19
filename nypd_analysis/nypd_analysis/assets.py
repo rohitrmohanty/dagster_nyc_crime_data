@@ -194,21 +194,46 @@ def shootings_df(
 
     return shootings_df
 
+# Asset for creating a dataframe with a new column for month
 
-# Creating the dataframe to store the value counts of shootings by month
+
 @asset
-def shootings_per_month_df(
+def shootings_df_with_month(
     context: AssetExecutionContext,
     shootings_df
-) -> pd.DataFrame:
+):
     # creates a new column for the month numbers since it was stored as a full date string
     shootings_df['month'] = pd.to_datetime(shootings_df['occur_date']).dt.month
-    # creates a new groupby object of month numbers and their corresponding counts
-    group_month = shootings_df.groupby('month')['incident_key'].count()
-    # adds some metadata about the created dataframe as a dagster asset
+    # adds some data about the created data frame to be stored along with the dagster asset
     context.add_output_metadata(
         metadata={
             "num_records": len(shootings_df),
+            "preview": MetadataValue.md(shootings_df.to_markdown()),
+        }
+    )
+
+    # creates a connection to the postgres server
+    engine = create_engine(postgres_connection_string)
+    # uses the pandas to_sql function to load the dataframe into postgres
+    shootings_df.to_sql('shootings_df_with_month',
+                        engine, if_exists='replace')
+
+    return shootings_df
+
+
+# Asset for Creating the dataframe to store the value counts of shootings by month
+@asset
+def shootings_per_month_df(
+    context: AssetExecutionContext,
+    shootings_df_with_month
+) -> pd.DataFrame:
+    # creates a new groupby object of month numbers and their corresponding counts
+    group_month = shootings_df_with_month.groupby(
+        'month')['incident_key'].count()
+    # adds some metadata about the created dataframe as a dagster asset
+    context.add_output_metadata(
+        metadata={
+            "num_records": len(group_month),
             "preview": MetadataValue.md(group_month.to_markdown()),
         }
     )
@@ -324,6 +349,68 @@ def value_counts_of_shootings_by_area(
 
     return shoots_boro
 
+# Asset for creating a dataframe consisting of Shootings data of only months 4, 5, 6, and 7
+
+
+@asset
+def value_counts_of_shootings_by_gender_for_select_months(
+    context: AssetExecutionContext,
+    shootings_df_with_month
+) -> pd.DataFrame:
+
+    req_month = shootings_df_with_month.query(
+        'month == 4 or month == 5 or month == 6 or month == 7')
+
+    req_month['month'] = req_month['month'].astype(int)
+    req_month['perp_sex'] = req_month.perp_sex.map(
+        {'M': 'Male', 'F': 'Female'})
+    gender = pd.DataFrame(req_month.groupby(
+        'month', as_index=False)['perp_sex'].value_counts())
+
+    # adds some metadata about the created dataframe as a dagster asset
+    context.add_output_metadata(
+        metadata={
+            "num_records": len(gender),
+            "preview": MetadataValue.md(gender.to_markdown()),
+        }
+    )
+
+    # creates a connection to the postgres server
+    engine = create_engine(postgres_connection_string)
+    # uses the pandas to_sql function to load the dataframe into postgres
+    gender.to_sql('value_counts_of_shootings_by_gender_for_select_months',
+                  engine, if_exists='replace')
+    return gender
+
+
+# Asset for creating the lineplots of Shootings by Male and Female For the Select Months with increasing trend
+@asset
+def line_plot_shootings__for_select_months_by_gender(
+    value_counts_of_shootings_by_gender_for_select_months
+) -> MaterializeResult:
+
+    # Plot the line chart
+    plt.figure(figsize=(10, 6))
+    sns.set_theme(style="darkgrid")
+    sns.lineplot(data=value_counts_of_shootings_by_gender_for_select_months, x='month',
+                 y='count', hue='perp_sex', marker='o', color='blue', linestyle='-', markersize=8)
+    plt.xlabel("Months")
+    plt.ylabel('Count of shooting incidents')
+
+    # starts a buffer stream to take the created plot as input
+    buffer = BytesIO()
+    # saves the created plot as a png file
+    plt.savefig(buffer, format="png")
+    # encodes the created plot in b64 encoding
+    image_data = base64.b64encode(buffer.getvalue())
+    # creating a string to be stored in markdown by decoding the created b64 encoding
+    md_content = f"![img](data:image/png;base64,{image_data.decode()})"
+
+    # materializing the created plot as a string output in markdown to be stored as a dagster asset
+    return MaterializeResult(
+        metadata={
+            "Shootings Per Month By Gender Trend for 2023": MetadataValue.md(md_content)}
+    )
 
 #
 #
@@ -332,6 +419,8 @@ def value_counts_of_shootings_by_area(
 #
 
 # Asset for creating the complaints dataframe with all the data to be used subsequently by downstream assets
+
+
 @asset(deps=[extract_complaints])
 def complaints_df(
     context: AssetExecutionContext
