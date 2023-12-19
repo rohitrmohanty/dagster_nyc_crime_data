@@ -177,10 +177,17 @@ def shootings_per_month_df(
     return shootings_per_month_df
 
 @asset
-def histogram_shootings_per_month_hist(shootings_per_month_df) -> MaterializeResult:
-    sns.barplot(data = shootings_per_month_df, x="month", y="incident_key",color='skyblue')
-    plt.xlabel('Month')
-    plt.ylabel('Counts')
+def lineplot_shootings_per_month_hist(shootings_per_month_df) -> MaterializeResult:
+    # Calculate the max y value
+    max_y_value = shootings_per_month_df['incident_key'].max()
+     
+    # Plot the line chart
+    plt.figure(figsize=(10, 6))
+    sns.lineplot(data=shootings_per_month_df, x="month", y = "incident_key", marker='o', color='blue', linestyle='-', markersize=8 )
+    plt.xlabel("Months")
+    plt.ylabel('Count of shooting incidents')
+    # Set y-axis limits to start from 0
+    plt.ylim(0, max_y_value + 10)  
     buffer = BytesIO()
     plt.savefig(buffer, format = "png")
     image_data = base64.b64encode(buffer.getvalue())
@@ -189,7 +196,7 @@ def histogram_shootings_per_month_hist(shootings_per_month_df) -> MaterializeRes
 
 
     return MaterializeResult(
-        metadata={"Shootings Per Month Hist": MetadataValue.md(md_content)}
+        metadata={"Shootings Per Month Trend for 2023": MetadataValue.md(md_content)}
     )
 
 
@@ -284,7 +291,9 @@ def value_counts_of_arrests_offenses(
     arrests_offenses_count  =  arrests_df['law_cat_cd'].value_counts()
     arrests_offenses_count_dataframe = pd.DataFrame(arrests_offenses_count)
     arrests_offenses_count_dataframe.index.names = ['OFFENSE']
-    arrests_offenses_count_dataframe.loc['law_cat_cd' == '9']
+    arrests_offenses_count_dataframe.drop(['9'], inplace = True)
+    arrests_offenses_count_dataframe.rename(index = {'M':'Misdemeanor', 'F':'Felony', 'V':'Violation', 'I': 'Infraction'}, inplace = True)
+
     context.add_output_metadata(
         metadata={
             "Arrest Counts Per Offense": MetadataValue.md(arrests_offenses_count_dataframe.to_markdown()),
@@ -300,7 +309,7 @@ def value_counts_of_arrests_and_complaints(
     value_counts_of_complaints_offenses
 ):
     complaint_arrest_joined = pd.merge(value_counts_of_complaints_offenses, value_counts_of_arrests_offenses, left_index = True, right_index = True)
-    complaint_arrest_joined = complaint_arrest_joined.rename(columns = {'LAW_CAT_CD_x':'Complaint Offense','LAW_CAT_CD_y':'Arrest Offense'})
+    complaint_arrest_joined = complaint_arrest_joined.rename(columns = {'count_x':'Complaint Offense','count_y':'Arrest Offense'})
 
     context.add_output_metadata(
         metadata={
@@ -319,10 +328,10 @@ def bar_chart_types_of_offenses_in_arrests_and_complaints(value_counts_of_arrest
     ax.set_xlabel('OFFENSE')
     ax.set_ylabel('Count')
     ax.set_title('Comparison of Offense')
-    #for p in plt.gca().patches:
-    #    plt.gca().annotate(f'{p.get_height()}', (p.get_x() + p.get_width() / 2., p.get_height()),
-    #                       ha='center', va='bottom', color='black', fontsize=10)
-        
+    for p in plt.gca().patches:
+        plt.gca().annotate(f'{p.get_height()}', (p.get_x() + p.get_width() / 2., p.get_height()),
+                           ha='center', va='bottom', color='black', fontsize=10)
+    plt.tight_layout()    
     buffer = BytesIO()
     plt.savefig(buffer, format = "png")
     image_data = base64.b64encode(buffer.getvalue())
@@ -332,5 +341,70 @@ def bar_chart_types_of_offenses_in_arrests_and_complaints(value_counts_of_arrest
 
     return MaterializeResult(
         metadata={"Comparison of Offenses in Complaints and Arrests": MetadataValue.md(md_content)}
+    )
+
+@asset
+def bar_chart_arrests_by_age_and_gender(arrests_df):
+    arrests_df.perp_sex = arrests_df.perp_sex.map({'F':'Female','M':'Male'})
+    arrests_df.dropna(subset=['perp_sex'], inplace=True)
+    arrest_age_group =['<18','18-24','25-44','45-64','65+']
+
+    plt.figure(figsize=(8, 6))
+    sns.set_theme(style = 'darkgrid')
+    sns.countplot(data=arrests_df, x='age_group', hue='perp_sex',order = arrest_age_group)
+    plt.title('Arrests Count by Age Group and Gender')
+    plt.xlabel('Age Group')
+    plt.ylabel('Count of Arrests')
+    plt.tight_layout()
+    for p in plt.gca().patches:
+        plt.gca().annotate(f'{p.get_height()}', (p.get_x() + p.get_width() / 2., p.get_height()),
+                           ha='center', va='bottom', color='black', fontsize=10)
+
+    buffer = BytesIO()
+    plt.savefig(buffer, format = "png")
+    image_data = base64.b64encode(buffer.getvalue())
+
+    md_content = f"![img](data:image/png;base64,{image_data.decode()})"
+
+
+    return MaterializeResult(
+        metadata={"Arrests by Age Group and Gender": MetadataValue.md(md_content)}
+    )
+
+@asset
+def arrests_for_most_common_age_group(
+    context: AssetExecutionContext,
+    arrests_df
+) -> pd.DataFrame:
+    arrests_for_most_common_age_group = arrests_df[arrests_df['age_group']=='25-44']
+ 
+    context.add_output_metadata(
+        metadata={
+            "Arrests For The Most Common Age Group (25-44)": MetadataValue.md(arrests_for_most_common_age_group.head().to_markdown()),
+        }
+    )
+    return arrests_for_most_common_age_group   
+ 
+@asset
+def bar_chart_arrests_by_felony_type_for_most_common_age_group(arrests_for_most_common_age_group):
+    sns.set_theme(style="whitegrid")
+    plt.subplots(figsize=(22,14))
+    sns.countplot(data = arrests_for_most_common_age_group, x = 'perp_race',hue = 'perp_sex',palette = 'pastel')
+    plt.xlabel('Race of arrested people')
+    plt.ylabel('Count of Arrests')
+    plt.tight_layout()
+    for p in plt.gca().patches:
+        plt.gca().annotate(f'{p.get_height()}', (p.get_x() + p.get_width() / 2., p.get_height()),
+                           ha='center', va='bottom', color='black', fontsize=10)
+
+    buffer = BytesIO()
+    plt.savefig(buffer, format = "png")
+    image_data = base64.b64encode(buffer.getvalue())
+
+    md_content = f"![img](data:image/png;base64,{image_data.decode()})"
+
+
+    return MaterializeResult(
+        metadata={"Arrests by Age Group and Gender": MetadataValue.md(md_content)}
     )
 
