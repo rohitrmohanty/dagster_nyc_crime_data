@@ -35,6 +35,13 @@ docker-compose up -d
 
 ## Getting started
 
+It is advisable to start this project in a virtual environment(on UNIX or LINUX):
+```bash
+python -m venv team_b
+source team_b/bin/activate
+pip install -e ".[dev]"
+```
+
 First, install your Dagster code location as a Python package. By using the --editable flag, pip will install your Python package in ["editable mode"](https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs) so that as you develop, local code changes will automatically apply.
 
 ```bash
