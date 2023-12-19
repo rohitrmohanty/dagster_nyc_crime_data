@@ -204,6 +204,8 @@ def shootings_df_with_month(
 ):
     # creates a new column for the month numbers since it was stored as a full date string
     shootings_df['month'] = pd.to_datetime(shootings_df['occur_date']).dt.month
+    shootings_df.drop(
+        ['_id', 'geocoded_column'], axis=1, inplace=True)
     # adds some data about the created data frame to be stored along with the dagster asset
     context.add_output_metadata(
         metadata={
