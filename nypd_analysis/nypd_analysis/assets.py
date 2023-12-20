@@ -889,8 +889,8 @@ def value_counts_of_arrests_and_shootings_by_area(
     arrests_and_shootings_by_area = pd.merge(
         value_counts_of_shootings_by_area, value_counts_of_arrests_by_area, left_index=True, right_index=True)
 
-    arrests_and_shootings_by_area = arrests_and_shootings_by_area.rename(
-        columns={'count_x': 'Shootings', 'count_y': 'Arrests'})
+    arrests_and_shootings_by_area.columns.values[0] = "Shootings"
+    arrests_and_shootings_by_area.columns.values[1] = "Arrests"
 
     # add some basic metadata about the query as a dagster asset
     context.add_output_metadata(
