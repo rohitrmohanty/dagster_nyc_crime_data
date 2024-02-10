@@ -2,6 +2,8 @@
 
 This is a [Dagster](https://dagster.io/) project scaffolded with [`dagster project scaffold`](https://docs.dagster.io/getting-started/create-new-project).
 
+The authors used their student IDs as a project for the module 'Database and Analytics Programming' for the Msc Data Analytics Masters course at the National College of Ireland. We made the repo public after the module was completed. A lot of the Data Wrangling and Visualisations were made with the help of [Sreelakshmi](https://www.linkedin.com/in/sreelakshmichittazhi/). The contributor x23113057 is [Rohit](https://www.linkedin.com/in/rohitrmohanty/)
+
 ## Docker
 
 Please ensure you have Docker installed on your system. If you want to run it using your own installations of MongoDB or PostgresSQL whether on docker or not then you will have to change the `mongodb_connection_string` or `postgres_connection_string` in `nypd_analysis/nypd_analysis/assets.py`
